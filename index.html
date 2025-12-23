@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Babel Protocol | The Genesis Simulation</title>
+
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;600&family=Inter:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --bg-dark: #0f172a;
+        --terminal-green: #10b981;
+        --accent-cyan: #38bdf8;
+        --gold: #fbbf24;
+        --danger: #ef4444;
+        --ai-bubble: #1e293b;
+      }
+
+      body {
+        background-color: var(--bg-dark);
+        color: #e2e8f0;
+        font-family: "Inter", sans-serif;
+        overflow-x: hidden;
+      }
+
+      .font-mono {
+        font-family: "Fira Code", monospace;
+      }
+
+      /* Effects */
+      .terminal-window {
+        background: #1e293b;
+        border: 1px solid #334155;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .typing-cursor::after {
+        content: "●";
+        animation: blink 1s step-start infinite;
+        color: var(--accent-cyan);
+        margin-left: 4px;
+      }
+
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+
+      /* Transitions */
+      .fade-in {
+        animation: fadeIn 0.8s forwards;
+      }
+      .slide-up {
+        animation: slideUp 0.6s forwards;
+      }
+      .pulse-slow {
+        animation: pulseSlow 3s infinite;
+      }
+      .shake {
+        animation: shake 0.5s;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes pulseSlow {
+        0%,
+        100% {
+          opacity: 0.5;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+      @keyframes shake {
+        0% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-5px);
+        }
+        50% {
+          transform: translateX(5px);
+        }
+        75% {
+          transform: translateX(-5px);
+        }
+        100% {
+          transform: translateX(0);
+        }
+      }
+      @keyframes hintGlow {
+        0% {
+          box-shadow: 0 0 5px var(--terminal-green);
+          border-color: var(--terminal-green);
+        }
+        50% {
+          box-shadow: 0 0 20px var(--terminal-green);
+          border-color: #4ade80;
+        }
+        100% {
+          box-shadow: 0 0 5px var(--terminal-green);
+          border-color: var(--terminal-green);
+        }
+      }
+
+      .hidden-section {
+        display: none;
+      }
+      .hint-active {
+        animation: hintGlow 2s infinite !important;
+      }
+
+      /* Tech Tree Node */
+      .tech-node {
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      .tech-node:hover {
+        transform: scale(1.03);
+      }
+      .tech-node.completed {
+        border-color: var(--terminal-green);
+      }
+
+      /* Login Input */
+      .login-input {
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid #475569;
+        color: white;
+        width: 100%;
+        padding: 10px 0;
+        outline: none;
+        transition: border-color 0.3s;
+      }
+      .login-input:focus {
+        border-color: var(--accent-cyan);
+      }
+
+      /* Search Animation */
+      .search-mode .compact-search-bar {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      .search-mode .hero-search {
+        display: none;
+      }
+      .compact-search-bar {
+        transform: translateY(-20px);
+        opacity: 0;
+        transition: all 0.5s ease-out;
+      }
+
+      /* Chat Styles */
+      .msg-enter {
+        animation: slideUp 0.4s ease-out forwards;
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      .option-btn {
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Correct State */
+      .option-btn.correct {
+        border-color: var(--terminal-green) !important;
+        background: rgba(16, 185, 129, 0.1) !important;
+        color: #4ade80 !important;
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+      }
+
+      /* Wrong State */
+      .option-btn.wrong {
+        border-color: var(--danger) !important;
+        background: rgba(239, 68, 68, 0.1) !important;
+        color: #fca5a5 !important;
+        opacity: 0.8;
+      }
+
+      /* Disabled State */
+      .option-btn.disabled {
+        pointer-events: none;
+      }
+      .option-btn.dimmed {
+        opacity: 0.3;
+      }
+
+      /* Token Card */
+      .token-card {
+        border-left: 3px solid #334155;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .token-card:hover {
+        transform: translateX(5px) scale(1.02);
+        background: #28364d;
+      }
+      .rarity-common {
+        border-color: #94a3b8;
+      }
+      .rarity-rare {
+        border-color: #38bdf8;
+        box-shadow: -5px 0 15px rgba(56, 189, 248, 0.1);
+      }
+      .rarity-legendary {
+        border-color: #fbbf24;
+        box-shadow: -5px 0 20px rgba(251, 191, 36, 0.2);
+      }
+
+      /* Flow Diagram */
+      .flow-step {
+        position: relative;
+        padding-left: 20px;
+        border-left: 2px dashed #475569;
+        padding-bottom: 30px;
+      }
+      .flow-step:last-child {
+        border-left: none;
+      }
+      .flow-dot {
+        position: absolute;
+        left: -6px;
+        top: 0;
+        width: 10px;
+        height: 10px;
+        background: #94a3b8;
+        border-radius: 50%;
+      }
+      .flow-step:hover .flow-dot {
+        background: var(--accent-cyan);
+        box-shadow: 0 0 10px var(--accent-cyan);
+      }
+    </style>
+  </head>
+  <body class="h-screen flex flex-col items-center justify-center bg-slate-900">
+    <!-- PROGRESS BAR -->
+    <div class="fixed top-0 left-0 w-full h-1 bg-slate-800 z-50">
+      <div
+        id="progress-bar"
+        class="h-full bg-cyan-500 transition-all duration-1000"
+        style="width: 0%"
+      ></div>
+    </div>
+
+    <!-- CHAPTER 1: THE AWAKENING (SOCRATIC) -->
+    <section id="view-1" class="w-full max-w-2xl p-4 slide-up">
+      <div class="terminal-window h-[650px] flex flex-col font-sans">
+        <!-- Header -->
+        <div
+          class="bg-slate-800 p-4 flex justify-between items-center border-b border-slate-700"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="w-8 h-8 rounded-full bg-cyan-900/50 flex items-center justify-center border border-cyan-500/30"
+            >
+              <i class="fa-solid fa-brain text-cyan-400 text-sm"></i>
+            </div>
+            <div>
+              <div class="text-sm font-bold text-slate-200">
+                Socratic Mentor
+              </div>
+              <div class="text-[10px] text-slate-400 tracking-wide">
+                AI PSYCHOLOGY ENGINE
+              </div>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button
+              onclick="location.reload()"
+              class="text-slate-500 hover:text-white text-xs"
+              title="Reset Protocol"
+            >
+              <i class="fa-solid fa-rotate-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div
+          id="chat-box"
+          class="flex-1 p-6 overflow-y-auto space-y-6 bg-slate-900/50"
+        >
+          <!-- Messages will appear here -->
+        </div>
+
+        <!-- Input Area -->
+        <div
+          id="input-zone"
+          class="p-4 border-t border-slate-700 bg-slate-800 min-h-[140px] flex flex-col justify-center transition-all relative"
+        >
+          <div
+            id="ai-status"
+            class="text-slate-500 italic text-sm text-center pulse-slow absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full"
+          >
+            <i class="fa-regular fa-comment-dots mr-2"></i>Initializing Neural
+            Handshake...
+          </div>
+          <div
+            id="options-container"
+            class="grid grid-cols-1 gap-3 w-full hidden"
+          >
+            <!-- Buttons injected here -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHAPTER 2: THE IDENTITY (PROFILE) -->
+    <section id="view-2" class="hidden-section w-full max-w-6xl p-4">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+        <!-- Left: ID Card -->
+        <div
+          class="lg:col-span-4 terminal-window p-8 bg-slate-900 flex flex-col justify-between border border-slate-700"
+        >
+          <div>
+            <div class="flex items-center gap-4 mb-8">
+              <div
+                class="w-20 h-20 bg-gradient-to-br from-cyan-600 to-blue-800 rounded-2xl flex items-center justify-center text-3xl font-bold text-white shadow-2xl shadow-cyan-900/50 border border-cyan-500/30"
+              >
+                L
+              </div>
+              <div>
+                <h1
+                  class="text-2xl font-bold text-white tracking-wider font-mono"
+                >
+                  LEORNIUS
+                </h1>
+                <div class="text-cyan-400 text-xs font-mono mt-1">
+                  GENESIS NODE #001
+                </div>
+                <div
+                  class="mt-2 inline-flex items-center px-2 py-0.5 rounded bg-green-900/30 text-green-400 text-[10px] border border-green-800"
+                >
+                  <span
+                    class="w-1.5 h-1.5 rounded-full bg-green-500 mr-2 animate-pulse"
+                  ></span>
+                  VERIFIED
+                </div>
+              </div>
+            </div>
+
+            <div class="relative h-64 w-full">
+              <canvas id="radarChart"></canvas>
+            </div>
+
+            <div
+              class="mt-6 space-y-3 font-mono text-xs border-t border-slate-800 pt-4"
+            >
+              <div class="flex justify-between text-slate-400">
+                <span>ARCHETYPE</span>
+                <span class="text-white font-bold">SYSTEM ARCHITECT</span>
+              </div>
+              <div class="flex justify-between text-slate-400">
+                <span>DOMINANT</span>
+                <span class="text-cyan-400">Ni (96.0) / Ti (83.5)</span>
+              </div>
+              <div class="flex justify-between text-slate-400">
+                <span>WEAKNESS</span>
+                <span class="text-red-400">Se (52.0) [AI Compensated]</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Assets -->
+        <div class="lg:col-span-8 flex flex-col gap-6">
+          <!-- Wallet -->
+          <div
+            class="terminal-window p-6 flex-1 bg-slate-900 border border-slate-700"
+          >
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-microchip text-gold"></i> TOKEN ASSETS
+              </h2>
+              <div class="text-xs font-mono text-slate-500">
+                BLOCK: 8921...A7
+              </div>
+            </div>
+            <div id="token-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Tokens Injected Here -->
+            </div>
+          </div>
+
+          <!-- Action -->
+          <div
+            class="terminal-window p-6 bg-gradient-to-r from-slate-800 to-slate-900 border border-cyan-900/50"
+          >
+            <div class="flex justify-between items-center">
+              <div>
+                <div class="text-sm text-slate-400 font-mono">
+                  CURRENT MARKET VALUATION
+                </div>
+                <div
+                  class="text-3xl font-bold text-white mt-1"
+                  id="salary-display"
+                >
+                  $2,400<span class="text-sm text-slate-500 font-normal"
+                    >/mo</span
+                  >
+                </div>
+              </div>
+              <button
+                onclick="switchView(3)"
+                class="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg shadow-lg shadow-cyan-600/20 transition-all flex items-center gap-2"
+              >
+                ACCESS LEARNING PATH <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHAPTER 3: THE UPGRADE (TECH TREE) -->
+    <section id="view-3" class="hidden-section w-full max-w-5xl p-4">
+      <div class="terminal-window p-8 bg-slate-900 border border-slate-700">
+        <div
+          class="flex justify-between items-center mb-8 border-b border-slate-800 pb-4"
+        >
+          <h2 class="text-2xl font-bold text-white">GENESIS TECH TREE</h2>
+          <div class="text-right">
+            <div class="text-xs text-slate-500">AVAILABLE CREDIT</div>
+            <div class="text-gold font-mono font-bold">
+              UNLIMITED (SPONSORED)
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+          <!-- Connector Line -->
+          <div
+            class="absolute top-1/2 left-0 w-full h-1 bg-slate-800 -z-0 hidden md:block"
+          ></div>
+
+          <!-- Node 1: Completed -->
+          <div
+            class="tech-node bg-slate-800 p-6 rounded-xl border border-green-500/30 z-10 opacity-70"
+          >
+            <div class="flex justify-between mb-2">
+              <span class="text-xs text-green-500 font-mono">COMPLETED</span>
+              <i class="fa-solid fa-check text-green-500"></i>
+            </div>
+            <h3 class="font-bold text-white">Java Spring Core</h3>
+            <p class="text-xs text-slate-400 mt-2">Backend Fundamentals</p>
+          </div>
+
+          <!-- Node 2: Completed -->
+          <div
+            class="tech-node bg-slate-800 p-6 rounded-xl border border-green-500/30 z-10 opacity-70"
+          >
+            <div class="flex justify-between mb-2">
+              <span class="text-xs text-green-500 font-mono">COMPLETED</span>
+              <i class="fa-solid fa-check text-green-500"></i>
+            </div>
+            <h3 class="font-bold text-white">First Principles</h3>
+            <p class="text-xs text-slate-400 mt-2">Logic Deconstruction</p>
+          </div>
+
+          <!-- Node 3: TARGET -->
+          <div
+            id="target-course"
+            onclick="learnCourse()"
+            class="tech-node bg-slate-800 p-6 rounded-xl border-2 border-cyan-500 z-10 shadow-[0_0_30px_rgba(6,182,212,0.2)] hover:bg-slate-700 group cursor-pointer"
+          >
+            <div class="flex justify-between mb-2">
+              <span class="text-xs text-cyan-400 font-mono animate-pulse"
+                >RECOMMENDED UPGRADE</span
+              >
+              <i class="fa-solid fa-lock-open text-cyan-400"></i>
+            </div>
+            <h3
+              class="font-bold text-white group-hover:text-cyan-300 transition-colors"
+            >
+              Advanced System Design v2
+            </h3>
+            <div class="mt-4 flex items-center justify-between">
+              <span
+                class="text-xs bg-purple-900/50 text-purple-300 px-2 py-1 rounded border border-purple-700/50"
+                >Harvard Protocol</span
+              >
+              <span class="text-green-400 font-mono text-sm font-bold"
+                >+$1,300/mo</span
+              >
+            </div>
+            <div
+              class="mt-4 text-center text-xs text-slate-400 group-hover:text-white transition-colors"
+            >
+              [ CLICK TO INSTANT LEARN ]
+            </div>
+          </div>
+        </div>
+
+        <!-- Notification Area -->
+        <div
+          id="upgrade-notif"
+          class="mt-8 p-4 bg-green-900/10 border border-green-500/30 rounded text-green-400 font-mono text-sm hidden text-center"
+        >
+          > UPLOAD COMPLETE. TOKEN MINTED.<br />
+          > SYNERGY CALCULATED: +20% (Ni + System Design).<br />
+          > MARKET VALUE UPDATED.
+        </div>
+
+        <button
+          id="btn-to-admin"
+          onclick="switchView(4)"
+          class="mt-8 w-full py-4 border border-slate-600 text-slate-400 hover:text-white hover:border-white transition-all rounded font-mono text-sm hidden"
+        >
+          >> SWITCH TO ENTERPRISE GATEWAY
+        </button>
+      </div>
+    </section>
+
+    <!-- CHAPTER 4: THE GATEKEEPER (LOGIN) -->
+    <section id="view-4" class="hidden-section w-full max-w-md p-4">
+      <div
+        class="terminal-window p-8 bg-black border border-slate-800 text-center"
+      >
+        <div class="mb-8">
+          <i class="fa-solid fa-shield-halved text-4xl text-slate-600 mb-4"></i>
+          <h2 class="text-xl font-mono text-white tracking-[5px]">
+            RESTRICTED AREA
+          </h2>
+          <p class="text-xs text-slate-500 mt-2">
+            Enterprise Protocol Access Only
+          </p>
+        </div>
+
+        <div class="space-y-6 text-left">
+          <div>
+            <label class="text-xs text-slate-500 font-mono">ORG_ID</label>
+            <input
+              type="text"
+              value="GOOGLE_CLOUD_HR"
+              class="login-input"
+              readonly
+            />
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 font-mono">ACCESS_KEY</label>
+            <input
+              type="password"
+              value="****************"
+              class="login-input"
+              readonly
+            />
+          </div>
+
+          <button
+            onclick="switchView(5)"
+            class="w-full bg-white text-black font-bold py-3 mt-4 hover:bg-slate-200 transition rounded"
+          >
+            AUTHENTICATE
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHAPTER 5: THE DISCOVERY (QUERY) -->
+    <section id="view-5" class="hidden-section w-full max-w-5xl p-4">
+      <div
+        class="terminal-window h-[700px] bg-white text-slate-900 flex flex-col relative overflow-hidden"
+        id="view-5-container"
+      >
+        <!-- Compact Header (Initially Hidden) -->
+        <div
+          id="compact-nav"
+          class="compact-search-bar absolute top-0 left-0 w-full bg-slate-50 border-b border-slate-200 p-3 z-20 flex justify-between items-center"
+        >
+          <div class="flex items-center gap-3 w-2/3">
+            <div class="font-bold text-slate-700 whitespace-nowrap">
+              <i class="fa-brands fa-google text-blue-600"></i> Talent Quantum
+            </div>
+            <div class="relative w-full">
+              <input
+                type="text"
+                id="compact-input"
+                value="System Architect High Ni"
+                class="w-full pl-8 pr-4 py-1.5 rounded-full bg-white border border-slate-300 text-sm font-mono focus:border-blue-500 outline-none"
+              />
+              <i
+                class="fa-solid fa-search absolute left-3 top-2 text-slate-400 text-xs"
+              ></i>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 text-xs font-mono text-slate-500">
+            <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded"
+              >Live Nodes: 8.2M</span
+            >
+          </div>
+        </div>
+
+        <!-- Hero Search (Initially Visible) -->
+        <div
+          id="hero-search"
+          class="hero-search p-10 flex-1 flex flex-col items-center justify-center transition-all duration-500"
+        >
+          <div
+            class="mb-4 flex items-center gap-2 text-slate-400 text-sm font-mono border px-3 py-1 rounded-full"
+          >
+            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            System Ready. Indexing Complete.
+          </div>
+          <h2 class="text-3xl font-bold text-slate-800 mb-6 tracking-tight">
+            Find the Architecture of Mind
+          </h2>
+          <div class="w-full max-w-2xl relative group">
+            <div
+              class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-400 rounded-full blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"
+            ></div>
+            <input
+              type="text"
+              id="query-input"
+              placeholder="Query by Token, Cognition, or Codename..."
+              class="relative w-full p-5 pl-12 border-2 border-slate-200 rounded-full text-lg focus:border-blue-500 outline-none shadow-sm font-mono bg-white"
+            />
+            <i
+              class="fa-solid fa-search absolute left-6 top-6 text-slate-400 text-lg"
+            ></i>
+            <button
+              onclick="runQuery()"
+              class="absolute right-2 top-2 bottom-2 bg-slate-900 text-white px-8 rounded-full font-bold hover:bg-blue-700 transition flex items-center gap-2"
+            >
+              SEARCH <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+          <div class="mt-6 text-sm text-slate-400 font-mono">
+            Try:
+            <span
+              class="bg-slate-100 px-2 py-1 rounded cursor-pointer hover:text-blue-600 border border-slate-200"
+              onclick="autoType('LEORNIUS')"
+              >LEORNIUS</span
+            >
+            or
+            <span
+              class="bg-slate-100 px-2 py-1 rounded cursor-pointer hover:text-blue-600 border border-slate-200"
+              onclick="autoType('System Architect High Ni')"
+              >System Architect High Ni</span
+            >
+          </div>
+        </div>
+
+        <!-- Results (Hidden initially) -->
+        <div
+          id="search-results"
+          class="hidden flex-1 overflow-auto bg-slate-50 pt-16 px-6 pb-6"
+        >
+          <div class="max-w-5xl mx-auto space-y-8">
+            <!-- Top Recommended -->
+            <div>
+              <div class="flex justify-between items-end mb-4">
+                <h3
+                  class="text-sm font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <i class="fa-solid fa-star text-yellow-500"></i> Top
+                  Recommendation
+                </h3>
+                <span class="text-xs font-mono text-slate-400"
+                  >AI Confidence: 98.4%</span
+                >
+              </div>
+
+              <!-- Candidate Genesis -->
+              <div
+                class="bg-white p-0 rounded-xl shadow-lg border-2 border-blue-500 overflow-hidden hover:shadow-xl transition-all cursor-pointer group relative"
+                onclick="switchView(6)"
+              >
+                <div
+                  class="absolute top-0 right-0 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg font-mono"
+                >
+                  GENESIS NODE
+                </div>
+                <div class="p-6 flex justify-between items-start">
+                  <div class="flex gap-5">
+                    <div
+                      class="w-16 h-16 bg-gradient-to-br from-slate-800 to-black text-white rounded-lg flex items-center justify-center font-bold text-2xl shadow-lg"
+                    >
+                      L
+                    </div>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <h3
+                          class="font-bold text-xl text-slate-900 group-hover:text-blue-600 transition"
+                        >
+                          LEORNIUS
+                        </h3>
+                        <i
+                          class="fa-solid fa-circle-check text-blue-500 text-sm"
+                        ></i>
+                      </div>
+                      <div class="text-sm text-slate-500 font-mono mb-3">
+                        System Architect (INTJ-T)
+                      </div>
+                      <div class="flex flex-wrap gap-2">
+                        <span
+                          class="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded border border-blue-100 font-bold font-mono"
+                          >High Ni (96)</span
+                        >
+                        <span
+                          class="px-2 py-1 bg-purple-50 text-purple-700 text-xs rounded border border-purple-100 font-bold font-mono"
+                          >AI Augmented</span
+                        >
+                        <span
+                          class="px-2 py-1 bg-green-50 text-green-700 text-xs rounded border border-green-100 font-bold font-mono"
+                          >First Principles</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div
+                      class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold mb-2 border border-green-200"
+                    >
+                      98% Match
+                    </div>
+                    <div class="text-3xl font-bold text-slate-800">
+                      $3,700<span class="text-xs text-slate-400 font-normal"
+                        >/mo</span
+                      >
+                    </div>
+                    <div class="text-xs text-slate-400 mt-1">
+                      Ready to Deploy
+                    </div>
+                  </div>
+                </div>
+                <!-- Synergy Bar -->
+                <div
+                  class="bg-slate-50 px-6 py-2 border-t border-slate-100 flex items-center gap-2 text-xs font-mono text-slate-500"
+                >
+                  <i class="fa-solid fa-bolt text-yellow-500"></i> Synergy
+                  Forecast: Team Velocity +35% with current lineup.
+                </div>
+              </div>
+            </div>
+
+            <!-- Other Results -->
+            <div>
+              <h3
+                class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"
+              >
+                <i class="fa-solid fa-layer-group"></i> Other Candidates
+              </h3>
+              <div class="space-y-3">
+                <!-- Dummy 1 -->
+                <div
+                  class="bg-white p-4 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors flex justify-between items-center opacity-70 hover:opacity-100"
+                >
+                  <div class="flex gap-4 items-center">
+                    <div
+                      class="w-10 h-10 bg-slate-200 text-slate-500 rounded flex items-center justify-center font-bold"
+                    >
+                      A
+                    </div>
+                    <div>
+                      <div class="font-bold text-slate-700">Alex Chen</div>
+                      <div class="text-xs text-slate-400 font-mono">
+                        Fullstack Polymath (ENFP)
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex gap-8 items-center">
+                    <div class="text-right hidden md:block">
+                      <div class="flex gap-1">
+                        <span
+                          class="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] rounded border"
+                          >React v18</span
+                        >
+                        <span
+                          class="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] rounded border"
+                          >Ne Hero</span
+                        >
+                      </div>
+                    </div>
+                    <div class="text-right w-24">
+                      <div
+                        class="inline-block bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-bold border border-yellow-200"
+                      >
+                        85% Match
+                      </div>
+                      <div class="text-sm font-bold text-slate-700 mt-1">
+                        $2,900
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Dummy 2 -->
+                <div
+                  class="bg-white p-4 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors flex justify-between items-center opacity-60 hover:opacity-100"
+                >
+                  <div class="flex gap-4 items-center">
+                    <div
+                      class="w-10 h-10 bg-slate-200 text-slate-500 rounded flex items-center justify-center font-bold"
+                    >
+                      S
+                    </div>
+                    <div>
+                      <div class="font-bold text-slate-700">Sarah Jenkins</div>
+                      <div class="text-xs text-slate-400 font-mono">
+                        Data Specialist (ISTJ)
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex gap-8 items-center">
+                    <div class="text-right hidden md:block">
+                      <div class="flex gap-1">
+                        <span
+                          class="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] rounded border"
+                          >Python Core</span
+                        >
+                        <span
+                          class="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] rounded border"
+                          >Si High</span
+                        >
+                      </div>
+                    </div>
+                    <div class="text-right w-24">
+                      <div
+                        class="inline-block bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-xs font-bold border border-orange-200"
+                      >
+                        72% Match
+                      </div>
+                      <div class="text-sm font-bold text-slate-700 mt-1">
+                        $4,100
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHAPTER 6: THE CONTRACT (LIQUIDITY) -->
+    <section id="view-6" class="hidden-section w-full max-w-lg p-4">
+      <div
+        class="bg-white rounded-xl shadow-2xl overflow-hidden animate-slide-up"
+      >
+        <div class="bg-[#0f172a] p-6 text-center border-b border-gray-800">
+          <div
+            class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl shadow-lg shadow-green-500/50"
+          >
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-white">SMART CONTRACT EXECUTED</h2>
+          <p class="text-gray-400 text-xs font-mono mt-1">TXID: 0x892...B31A</p>
+        </div>
+
+        <div class="p-8 space-y-4">
+          <div
+            class="flex justify-between items-center text-sm border-b border-dashed border-gray-200 pb-4"
+          >
+            <span class="text-gray-500">Asset</span>
+            <span class="font-bold text-gray-800">LEORNIUS (Genesis Node)</span>
+          </div>
+
+          <div class="space-y-2 font-mono text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-500">Base Valuation (Cognitive)</span>
+              <span>$1,300.00</span>
+            </div>
+            <div class="flex justify-between text-green-700">
+              <span>+ Token: Java Spring</span>
+              <span>$300.00</span>
+            </div>
+            <div class="flex justify-between text-green-700">
+              <span>+ Token: First Principles</span>
+              <span>$600.00</span>
+            </div>
+            <div class="flex justify-between text-purple-700 font-bold">
+              <span>+ Token: System Design v2</span>
+              <span>$1,300.00</span>
+            </div>
+            <div class="flex justify-between text-blue-600 text-xs italic">
+              <span>>> Synergy Bonus (Ni + Arch)</span>
+              <span>$200.00</span>
+            </div>
+          </div>
+
+          <div
+            class="bg-slate-100 p-4 rounded-lg mt-6 flex justify-between items-center border border-slate-200"
+          >
+            <span class="text-gray-600 font-bold">TOTAL MONTHLY</span>
+            <span class="text-3xl font-bold text-slate-900">$3,700.00</span>
+          </div>
+
+          <div class="text-[10px] text-gray-400 text-center mt-4">
+            Royalty of $26.00 (2%) automatically routed to Harvard University
+            Wallet.
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 mt-6">
+            <button
+              onclick="location.reload()"
+              class="w-full py-4 bg-slate-200 text-slate-700 font-bold rounded hover:bg-slate-300 transition text-sm"
+            >
+              <i class="fa-solid fa-rotate-right mr-2"></i>RESTART
+            </button>
+            <button
+              onclick="switchView(7)"
+              class="w-full py-4 bg-gray-900 text-white font-bold rounded hover:bg-black transition text-sm flex items-center justify-center gap-2"
+            >
+              VIEW BLUEPRINT <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHAPTER 7: THE BLUEPRINT (ARCHITECTURE) -->
+    <section id="view-7" class="hidden-section w-full max-w-5xl p-4">
+      <div class="terminal-window p-8 bg-slate-900 border border-slate-700">
+        <div
+          class="flex justify-between items-start mb-8 border-b border-slate-800 pb-6"
+        >
+          <div>
+            <h2 class="text-2xl font-bold text-white tracking-widest font-mono">
+              PROJECT BABEL
+            </h2>
+            <p class="text-cyan-400 text-sm mt-1">
+              The Tower of Universal Understanding (Reversed)
+            </p>
+          </div>
+          <div class="text-right">
+            <button
+              onclick="location.reload()"
+              class="text-slate-500 hover:text-white text-sm"
+            >
+              <i class="fa-solid fa-times"></i> CLOSE
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <!-- Text Column -->
+          <div class="space-y-6 text-sm text-slate-300 leading-relaxed">
+            <p>
+              <strong class="text-white">BABEL</strong> (in scripture)
+              symbolizes the fragmentation of language, preventing human
+              understanding and collapsing great endeavors.
+            </p>
+            <p>
+              <strong class="text-white">PROJECT BABEL</strong> (The Protocol)
+              is built to reverse that curse. We create a common language for
+              the labor market:
+              <span class="text-cyan-400">Tokenized Merit</span>.
+            </p>
+            <div class="bg-slate-800 p-4 rounded border-l-4 border-gold">
+              <h4 class="text-gold font-bold mb-2 text-xs uppercase">
+                Core Philosophy
+              </h4>
+              <p class="italic text-slate-400 text-xs">
+                "The current education system is a chaotic Babel tower, where
+                degrees do not 'speak' to enterprise needs. We demolish the old
+                tower to build a flat, transparent, and efficient network."
+              </p>
+            </div>
+          </div>
+
+          <!-- Visual Column (Flow) -->
+          <div class="relative pl-4">
+            <div class="absolute left-0 top-0 bottom-0 w-px bg-slate-700"></div>
+
+            <div class="flow-step">
+              <div class="flow-dot"></div>
+              <h4 class="text-white font-bold text-sm">
+                1. Extraction (Socratic AI)
+              </h4>
+              <p class="text-xs text-slate-500 mt-1">
+                Mining raw data from the user's mind ($Ni, Ti, Ne...).
+                Converting invisible potential into tangible parameters.
+              </p>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-dot"></div>
+              <h4 class="text-white font-bold text-sm">
+                2. Tokenization (The Ledger)
+              </h4>
+              <p class="text-xs text-slate-500 mt-1">
+                Packaging skills into Tokens. Each Token carries a specific
+                monetary value, verified by community and enterprise.
+              </p>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-dot"></div>
+              <h4 class="text-white font-bold text-sm">
+                3. Liquidity (The Market)
+              </h4>
+              <p class="text-xs text-slate-500 mt-1">
+                Instant supply-demand matching. Enterprises buy 'Human Machines'
+                instead of hiring people. Cash flow routes back to educators
+                (Royalty).
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-slate-800 text-center">
+          <p class="text-xs text-slate-500 font-mono">
+            Built by Leornius (20 y.o) in 15 days.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOGIC -->
+    <script>
+      // --- DATA ---
+      let salary = 2400;
+      const profile = {
+        mbti: {
+          Ni: 96,
+          Ti: 83.5,
+          Ne: 80,
+          Fe: 64.5,
+          Si: 58.5,
+          Te: 54,
+          Fi: 54,
+          Se: 52,
+        },
+        tokens: [
+          { name: "Java Spring", rarity: "Common", val: 300 },
+          { name: "First Principles", rarity: "Legendary", val: 600 },
+          { name: "AI Augmentation", rarity: "Rare", val: 1000 },
+          { name: "Jungian Systems", rarity: "Epic", val: 400 },
+        ],
+      };
+
+      const script = [
+        {
+          text: "Hello. I am Socratic AI. I am not here to judge or test you. The purpose of this conversation is to define your 'Cognitive Map' and design the most personalized learning path. Are you ready to discover yourself?",
+          sender: "AI",
+          options: [{ label: "I am ready. Let's begin.", type: "Neutral" }],
+        },
+        {
+          text: "Excellent. Imagine: You are managing a critical system and notice a core module failure at 2 AM. Revenue is dropping by $10k per minute. What does your intuition tell you first?",
+          sender: "AI",
+          options: [
+            {
+              label:
+                "Apply a temporary patch immediately. Save revenue first, clean up later.",
+              type: "Se",
+              warning:
+                "This is the reaction of 'The Fixer'. But we are looking for 'The Architect'. Think deeper about long-term consequences.",
+            },
+            {
+              label:
+                "Halt the system. I cannot tolerate imperfection. I must fix the root cause.",
+              type: "Ti",
+              correct: true,
+            },
+          ],
+        },
+        {
+          text: "A brave and principled choice. But look deeper: When you choose to fix the root cause, you accept short-term revenue loss in exchange for long-term stability. What makes you believe perfection is more important than money?",
+          sender: "AI",
+          options: [
+            {
+              label:
+                "Because reputation is the only thing that cannot be bought back.",
+              type: "Fi",
+              warning:
+                "Inner values (Fi) are precious. But in a logical system, we need technical reasoning. Try again.",
+            },
+            {
+              label:
+                "Because a faulty system is a ticking time bomb. Logic does not allow me to be sloppy.",
+              type: "Ti",
+              correct: true,
+            },
+          ],
+        },
+        {
+          text: "I sense very strong Systemic Thinking in you. One final question: You can use AI to write code 10x faster, but you cannot control every single line it writes. Do you accept trading control for speed?",
+          sender: "AI",
+          options: [
+            {
+              label: "Yes. Speed is everything in this era.",
+              type: "Te",
+              warning:
+                "Efficiency (Te) is important, but an 'Architect' never fully delegates to tools. Reconsider the role of control.",
+            },
+            {
+              label:
+                "No. I use AI to frame, but I verify logic line by line. I am an Architect, not a bricklayer.",
+              type: "Ni",
+              correct: true,
+            },
+          ],
+        },
+      ];
+
+      // --- FUNCTIONS ---
+
+      function switchView(viewId) {
+        // Hide all
+        for (let i = 1; i <= 7; i++) {
+          const el = document.getElementById(`view-${i}`);
+          if (el) el.classList.add("hidden-section");
+        }
+        // Show target
+        const target = document.getElementById(`view-${viewId}`);
+        target.classList.remove("hidden-section");
+        target.classList.add("fade-in");
+
+        // Progress Bar (Only update for main flow 1-6)
+        if (viewId <= 6) {
+          document.getElementById("progress-bar").style.width = `${
+            (viewId / 6) * 100
+          }%`;
+        }
+
+        // Trigger specific view logic
+        if (viewId === 2) {
+          renderChart();
+          renderTokens();
+        }
+      }
+
+      // Chat Logic
+      let chatStep = 0;
+      let hintTimeout = null;
+
+      function nextChat() {
+        const box = document.getElementById("chat-box");
+        const area = document.getElementById("options-container");
+        const status = document.getElementById("ai-status");
+
+        area.classList.add("hidden"); // Hide options during "typing"
+        status.classList.remove("hidden"); // Show typing status
+
+        if (chatStep >= script.length) return;
+
+        const line = script[chatStep];
+
+        // AI Typing Visual
+        setTimeout(() => {
+          status.classList.add("hidden"); // Hide typing
+          area.classList.remove("hidden"); // Show options area
+
+          // AI Message
+          const msgWrapper = document.createElement("div");
+          msgWrapper.className = "flex gap-4 msg-enter mb-6";
+          msgWrapper.innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-cyan-900/30 flex-shrink-0 flex items-center justify-center border border-cyan-500/20 mt-1">
+                        <i class="fa-solid fa-brain text-cyan-400 text-xs"></i>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-r-xl rounded-bl-xl text-slate-200 text-sm leading-relaxed border border-slate-700 shadow-lg max-w-[90%]">
+                        ${line.text}
+                    </div>
+                `;
+          box.appendChild(msgWrapper);
+          box.scrollTop = box.scrollHeight;
+
+          // Options Render
+          area.innerHTML = ""; // Clear previous
+          if (line.options) {
+            line.options.forEach((opt, index) => {
+              const btn = document.createElement("button");
+              btn.className =
+                "option-btn w-full text-left p-4 bg-slate-900 border border-slate-700 hover:border-cyan-500/50 text-slate-300 hover:text-white transition-all text-sm rounded-lg group relative";
+              btn.innerHTML = `<span class="text-cyan-500/50 group-hover:text-cyan-400 mr-2">●</span> ${opt.label}`;
+
+              // Hint Logic: Correct answer glows after 5 seconds if no action
+              if (opt.correct || opt.type === "Neutral") {
+                btn.dataset.correct = "true";
+              }
+
+              btn.onclick = () => handleOptionClick(btn, opt, area, box);
+              area.appendChild(btn);
+            });
+
+            // Start Hint Timer
+            if (hintTimeout) clearTimeout(hintTimeout);
+            hintTimeout = setTimeout(() => {
+              const correctBtn = area.querySelector('[data-correct="true"]');
+              if (correctBtn) correctBtn.classList.add("hint-active");
+            }, 5000); // 5 seconds delay for hint
+          }
+        }, 800);
+      }
+
+      function handleOptionClick(btn, opt, area, box) {
+        // Stop Hint Timer
+        if (hintTimeout) clearTimeout(hintTimeout);
+
+        // Remove hint glow from all
+        const allBtns = area.querySelectorAll("button");
+        allBtns.forEach((b) => b.classList.remove("hint-active"));
+
+        if (opt.correct || opt.type === "Neutral") {
+          // CORRECT STATE
+          btn.classList.add("correct");
+
+          // Disable others
+          allBtns.forEach((b) => {
+            if (b !== btn) {
+              b.classList.add("disabled", "dimmed");
+              b.onclick = null;
+            }
+          });
+          btn.onclick = null; // Disable self preventing double clicks
+
+          // Add User Bubble
+          const userMsg = document.createElement("div");
+          userMsg.className = "flex gap-4 msg-enter justify-end mb-6";
+          userMsg.innerHTML = `
+                    <div class="bg-cyan-900/20 p-4 rounded-l-xl rounded-br-xl text-cyan-100 text-sm leading-relaxed border border-cyan-500/30 shadow-lg max-w-[80%] text-right">
+                        ${opt.label}
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-slate-700 flex-shrink-0 flex items-center justify-center border border-slate-600 mt-1">
+                        <i class="fa-solid fa-user text-slate-400 text-xs"></i>
+                    </div>
+                `;
+          box.appendChild(userMsg);
+          box.scrollTop = box.scrollHeight;
+
+          // Proceed Next
+          if (chatStep === script.length - 1) {
+            setTimeout(() => {
+              const success = document.createElement("div");
+              success.className =
+                "text-center text-green-400 font-bold mt-8 mb-4 msg-enter";
+              success.innerHTML = `
+                            <div class="inline-block p-4 bg-green-900/20 rounded-full border border-green-500/30 mb-2">
+                                <i class="fa-solid fa-check text-2xl"></i>
+                            </div>
+                            <div>ARCHETYPE CONFIRMED</div>
+                            <div class="text-sm text-green-600 font-normal mt-1">Generating Genesis Profile...</div>
+                        `;
+              box.appendChild(success);
+              box.scrollTop = box.scrollHeight;
+              setTimeout(() => switchView(2), 2500);
+            }, 1000);
+          } else {
+            chatStep++;
+            setTimeout(nextChat, 1000);
+          }
+        } else {
+          // WRONG STATE
+          btn.classList.add("wrong", "shake");
+
+          // Show Warning Message
+          const warningMsg = document.createElement("div");
+          warningMsg.className =
+            "text-danger text-xs italic mt-2 ml-6 msg-enter border-l-2 border-danger pl-2";
+          warningMsg.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> ${opt.warning}`;
+          btn.parentNode.insertBefore(warningMsg, btn.nextSibling);
+
+          // Disable this button temporarily
+          btn.classList.add("disabled");
+
+          // Auto Reset Button after 3s
+          setTimeout(() => {
+            btn.classList.remove("wrong", "shake", "disabled");
+            warningMsg.remove();
+          }, 3000);
+        }
+      }
+
+      // Chart Logic
+      function renderChart() {
+        const ctx = document.getElementById("radarChart").getContext("2d");
+        new Chart(ctx, {
+          type: "radar",
+          data: {
+            labels: Object.keys(profile.mbti),
+            datasets: [
+              {
+                label: "Cognitive Stack",
+                data: Object.values(profile.mbti),
+                backgroundColor: "rgba(56, 189, 248, 0.2)", // Sky Blue
+                borderColor: "#38bdf8",
+                pointBackgroundColor: "#0f172a",
+                pointBorderColor: "#fbbf24",
+              },
+            ],
+          },
+          options: {
+            scales: {
+              r: {
+                angleLines: { color: "#334155" },
+                grid: { color: "#1e293b" },
+                ticks: { display: false, backdropColor: "transparent" },
+                pointLabels: {
+                  color: "#94a3b8",
+                  font: { size: 11, family: "Fira Code" },
+                },
+              },
+            },
+            plugins: { legend: { display: false } },
+            maintainAspectRatio: false,
+          },
+        });
+      }
+
+      function renderTokens() {
+        const list = document.getElementById("token-list");
+        list.innerHTML = "";
+        profile.tokens.forEach((t) => {
+          const borderClass =
+            t.rarity === "Legendary"
+              ? "rarity-legendary"
+              : t.rarity === "Epic"
+              ? "rarity-rare"
+              : "rarity-common";
+          const colorClass =
+            t.rarity === "Legendary"
+              ? "text-gold"
+              : t.rarity === "Epic"
+              ? "text-purple-400"
+              : "text-slate-400";
+
+          list.innerHTML += `
+                    <div class="token-card ${borderClass} bg-slate-800 p-4 rounded-lg flex justify-between items-center">
+                        <div>
+                            <div class="text-white font-bold text-sm">${t.name}</div>
+                            <div class="text-[10px] text-slate-500 uppercase tracking-widest font-mono mt-1">${t.rarity}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="${colorClass} font-mono font-bold">+$${t.val}</div>
+                        </div>
+                    </div>
+                `;
+        });
+      }
+
+      // Upgrade Logic
+      function learnCourse() {
+        const node = document.getElementById("target-course");
+        node.classList.add("completed");
+        node.innerHTML = `
+                <div class="flex justify-between mb-2">
+                    <span class="text-xs text-green-500 font-mono">ACQUIRED</span>
+                    <i class="fa-solid fa-check-double text-green-500"></i>
+                </div>
+                <h3 class="font-bold text-white">System Design v2</h3>
+                <div class="mt-2 text-green-400 font-mono text-sm">+ $1,300 added to valuation</div>
+            `;
+        node.onclick = null; // Disable click
+
+        // Show notif
+        const notif = document.getElementById("upgrade-notif");
+        notif.classList.remove("hidden");
+        notif.classList.add("fade-in");
+
+        // Enable Next
+        document.getElementById("btn-to-admin").classList.remove("hidden");
+        document.getElementById("btn-to-admin").classList.add("fade-in");
+      }
+
+      // Query Logic
+      function autoType(text) {
+        document.getElementById("query-input").value = text;
+      }
+
+      function runQuery() {
+        const input = document.getElementById("query-input").value;
+        if (!input) return;
+
+        // Trigger Search UI Mode
+        document
+          .getElementById("view-5-container")
+          .classList.add("search-mode");
+
+        // Show results with delay
+        setTimeout(() => {
+          document.getElementById("search-results").classList.remove("hidden");
+          document.getElementById("search-results").classList.add("fade-in");
+        }, 300);
+      }
+
+      // Init
+      window.onload = () => {
+        setTimeout(nextChat, 500);
+      };
+    </script>
+  </body>
+</html>
